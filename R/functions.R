@@ -39,6 +39,7 @@ pathways.hallmark <- gmtPathways("~/Documents/r_projects/HER2_scRNAseq/refs/h.al
 
 # Helper functions
 
+#version 1
 vlookup <- function(list, table, col_1, col_2) {
         new_list <- table[[col_2]][match(list, table[[col_1]])]
         return(new_list)
