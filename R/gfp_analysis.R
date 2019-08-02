@@ -63,7 +63,7 @@ plot_stat(gfp_combined, "prop_fill", group_levels = stages, cluster_levels = gfp
 
 plot_stat(gfp_combined, "prop_diverge", group_levels = stages, cluster_levels = gfp_levels, plot_ratio = 0.8)
 
-plot_stat(gfp_combined, "prop_diverge_multi", group_levels = stages, cluster_levels = gfp_levels, plot_ratio = 0.8)
+plot_stat(gfp_combined, "prop_multi", group_levels = stages, cluster_levels = gfp_levels, plot_ratio = 0.8)
 
 
 # DE analysis

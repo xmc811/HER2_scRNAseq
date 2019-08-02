@@ -17,6 +17,7 @@ library(formattable)
 library(magrittr)
 library(sctransform)
 library(ggpubr)
+library(scales)
 
 library(clusterProfiler)
 library(org.Mm.eg.db)
@@ -393,6 +394,7 @@ plot_stat <- function(dataset, plot_type,
                
                prop_fill = ggplot(stat) + 
                        geom_bar(aes(x = group, y = freq, fill = cluster), position = "fill", stat = "identity") +
+                       scale_y_continuous(labels = scales::percent) +
                        scale_fill_manual(values = cluster_colors, name = "Clusters") +
                        labs(y = "Proportion") + thm,
                
@@ -406,14 +408,15 @@ plot_stat <- function(dataset, plot_type,
                        coord_flip() +
                        scale_fill_manual(values = group_colors, name = "Stages") +
                        scale_y_continuous(breaks = pretty(c(stat$freq, -stat$freq)),
-                                          labels = abs(pretty(c(stat$freq, -stat$freq)))) +
+                                          labels = scales::percent(abs(pretty(c(stat$freq, -stat$freq))))) +
                        labs(x = NULL, y = "Proportion"),
                
-               prop_diverge_multi = stat %>%
-                       mutate(cluster = fct_rev(cluster)) %>%
+               prop_multi = stat %>%
                        mutate(freq = round(freq, 3)) %>%
                        ggplot() + 
-                       geom_bar(aes(x=group, y = freq, fill = group), stat = "identity") +
+                       geom_bar(aes(x = group, y = freq, fill = group), stat = "identity") +
+                       geom_text(aes(x = group, y = freq, label = scales::percent(freq)), vjust = -0.5) +
+                       scale_y_continuous(expand = expand_scale(mult = c(0, 0.1)), labels = scales::percent_format(accuracy = 0.1)) +
                        facet_wrap(~cluster, ncol = 4, scales = "free") +
                        scale_fill_manual(values = group_colors, name = "Stages") +
                        labs(x = NULL, y = "Proportion"),
@@ -529,5 +532,24 @@ cor(de$avg_logFC, -log(de$p_val_adj) * sign(de$avg_logFC))
 DoHeatmap(object = gfp_combined, assay = 'integrated', features =  get_top_genes(gfp_combined, gfp_markers, 6), 
           group.bar = F, raster = F, draw.lines = F)
 
+stat <- as_tibble(cbind(group = as.character(cd45_combined$group), cluster = as.character(Idents(cd45_combined))))
+stat %<>%
+        mutate(group = factor(group, levels = stages),
+               cluster = factor(cluster, levels = cd45_levels)) %>%
+        group_by(group, cluster) %>%
+        summarise(n = n()) %>%
+        mutate(freq = n / sum(n))
 
+stat %<>%
+        mutate(freq = round(freq, 3))
+
+ggplot(stat) + 
+        geom_bar(aes(x = group, y = freq, fill = group), stat = "identity") +
+        geom_text(aes(x = group, y = freq, label = scales::percent(freq)), vjust = -0.5) +
+        scale_y_continuous(expand = expand_scale(mult = c(0, 0.1)), labels = scales::percent_format(accuracy = 0.1)) +
+        facet_wrap(cluster~., scales = "free", ncol = 4) +
+        scale_fill_manual(values = c('#7bccc4','#f03b20'), name = "Stages") +
+        labs(x = NULL, y = "Proportion")
+
+stat$cluster
 
