@@ -402,7 +402,7 @@ plot_stat <- function(dataset, plot_type,
                        mutate(freq = round(freq, 3)) %>%
                        ggplot() + 
                        geom_bar(aes(x=cluster, y = freq, fill = group), stat = "identity") +
-                       geom_text(aes(x=cluster, y = freq + 0.03*sign(freq), label = percent(abs(freq), digits = 1))) +
+                       geom_text(aes(x=cluster, y = freq + 0.03 * sign(freq), label = percent(abs(freq), digits = 1))) +
                        coord_flip() +
                        scale_fill_manual(values = group_colors, name = "Stages") +
                        scale_y_continuous(breaks = pretty(c(stat$freq, -stat$freq)),
