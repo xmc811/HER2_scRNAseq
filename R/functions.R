@@ -517,5 +517,8 @@ cor(de$avg_logFC, -log(de$p_val_adj) * sign(de$avg_logFC))
 
 
 
+DoHeatmap(object = gfp_combined, assay = 'integrated', features =  get_top_genes(gfp_combined, gfp_markers, 6), 
+          group.bar = F, raster = F, draw.lines = F)
+
 
 
