@@ -409,6 +409,15 @@ plot_stat <- function(dataset, plot_type,
                                           labels = abs(pretty(c(stat$freq, -stat$freq)))) +
                        labs(x = NULL, y = "Proportion"),
                
+               prop_diverge_multi = stat %>%
+                       mutate(cluster = fct_rev(cluster)) %>%
+                       mutate(freq = round(freq, 3)) %>%
+                       ggplot() + 
+                       geom_bar(aes(x=group, y = freq, fill = group), stat = "identity") +
+                       facet_wrap(~cluster, ncol = 4, scales = "free") +
+                       scale_fill_manual(values = group_colors, name = "Stages") +
+                       labs(x = NULL, y = "Proportion"),
+               
                stop("Unknown plot type")
         )
         
