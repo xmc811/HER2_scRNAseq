@@ -516,37 +516,38 @@ plot_GSEA <- function(gsea_res, pattern = "HALLMARK_", p_cutoff = 0.05, levels) 
 }
 
 
-Add_exhaustion_score <- function(dataset,features,org,nbin,ctrl,name){
+add_exhaustion_score <- function(dataset, features, org, nbin, ctrl, name){
   
-  if(org == "mouse"){
-    ex_genes<-vlookup(features, mm_hs, 2, 1)
-    ex_genes<-list(ex_genes[!is.na(ex_genes)])
-    
-  }else{
-    ex_genes<-list(features)
-  }
+        if(org == "mouse"){
+                ex_genes <- vlookup(features, mm_hs, 2, 1)
+                ex_genes <- list(ex_genes[!is.na(ex_genes)])
+        } else {
+                ex_genes <- list(features)
+        }
   
-  n_genes<-nrow(dataset@assays$integrated@scale.data)
-  genes_per_bin<-round(n_genes/nbin)
+        n_genes <- nrow(dataset@assays$integrated@scale.data)
+        genes_per_bin <- round(n_genes/nbin)
   
-  if(ctrl > genes_per_bin){
-    ctrl=round(genes_per_bin/3)
-  }else{
-    ctrl=ctrl
-  }
+        ctrl <- ifelse(ctrl > genes_per_bin, round(genes_per_bin/3), ctrl)
   
-  dataset<-AddModuleScore(dataset,features=ex_genes,ctrl=ctrl,nbin=nbin,name=name)
-  #print(head(dataset[[]]))
+        dataset <- AddModuleScore(dataset,
+                                  features = ex_genes,
+                                  ctrl = ctrl,
+                                  nbin = nbin,
+                                  name = name)
+        
+        plot_df <- data.frame(cluster = dataset[[]]$seurat_clusters,
+                              name = dataset[[]][,ncol(dataset[[]])])
+        colnames(plot_df)[2] <- name
   
-  plot_df<-data.frame(cluster=dataset[[]]$seurat_clusters,name=dataset[[]][,ncol(dataset[[]])])
-  colnames(plot_df)[2]<-name
+        print(ggplot(plot_df) + 
+                  geom_boxplot(aes(x = cluster, 
+                                   y = plot_df[,2], 
+                                   fill = cluster)) +
+                  scale_fill_brewer(palette = "Set3") +
+                  labs(y = name))
   
-  print(ggplot(plot_df) + 
-          geom_boxplot(aes(x = cluster, y = plot_df[,2], fill = cluster)) +
-          scale_fill_brewer(palette = "Set3") +
-          labs(y = name))
-  
-  return(dataset)
+        return(dataset)
 }
 
 # Test
