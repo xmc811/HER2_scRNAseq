@@ -354,7 +354,8 @@ plot_stat <- function(dataset, plot_type,
                       self_colors,
                       group_colors = c('#7bccc4','#f03b20'),
                       palette = c("Paired", "Set2"),
-                      plot_ratio = 1) {
+                      plot_ratio = 1,
+                      text_size = 10) {
         
         stat <- as_tibble(cbind(group = as.character(dataset$group), cluster = as.character(Idents(dataset))))
         stat %<>%
@@ -367,7 +368,12 @@ plot_stat <- function(dataset, plot_type,
         cluster_colors <- if(self_set_color) self_colors else (get_palette(length(levels(Idents(dataset))), palette = palette))
         
         thm <- theme(aspect.ratio = plot_ratio,
-                     axis.title.x = element_blank())
+                     legend.title = element_text(size = text_size),
+                     legend.text = element_text(size = text_size),
+                     axis.title = element_text(size = text_size),
+                     axis.text = element_text(size = text_size),
+                     axis.title.x = element_blank()
+                     )
         
         switch(plot_type,
                group_count = stat %>%
@@ -376,7 +382,7 @@ plot_stat <- function(dataset, plot_type,
                        ggplot() +
                        geom_col(aes(x = group, y = `sum(n)`, fill = group)) +
                        geom_text(aes(x = group, y = `sum(n)`, label = `sum(n)`), 
-                                 vjust = -1) +
+                                 vjust = -0.5, size = text_size * 0.35) +
                        scale_fill_manual(values = c('#7bccc4','#f03b20'), name = "Group") + 
                        labs(y = "Counts") + thm,
                
@@ -386,7 +392,7 @@ plot_stat <- function(dataset, plot_type,
                        ggplot() +
                        geom_col(aes(x = cluster, y = `sum(n)`, fill = cluster)) +
                        geom_text(aes(x = cluster, y = `sum(n)`, label = `sum(n)`), 
-                                 vjust = -1) +
+                                 vjust = -0.5, size = text_size * 0.35) +
                        scale_fill_manual(values = cluster_colors, name = "Clusters") + 
                        labs(y = "Counts") + 
                        theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
@@ -404,22 +410,29 @@ plot_stat <- function(dataset, plot_type,
                        mutate(freq = round(freq, 3)) %>%
                        ggplot() + 
                        geom_bar(aes(x=cluster, y = freq, fill = group), stat = "identity") +
-                       geom_text(aes(x=cluster, y = freq + 0.03 * sign(freq), label = percent(abs(freq), digits = 1))) +
+                       geom_text(aes(x=cluster, y = freq + 0.03 * sign(freq), label = percent(abs(freq), digits = 1)), size = text_size * 0.35) +
                        coord_flip() +
                        scale_fill_manual(values = group_colors, name = "Stages") +
                        scale_y_continuous(breaks = pretty(c(stat$freq, -stat$freq)),
                                           labels = scales::percent(abs(pretty(c(stat$freq, -stat$freq))))) +
-                       labs(x = NULL, y = "Proportion"),
+                       labs(x = NULL, y = "Proportion") +
+                       theme(aspect.ratio = plot_ratio,
+                             legend.title = element_text(size = text_size),
+                             legend.text = element_text(size = text_size),
+                             axis.title = element_text(size = text_size),
+                             axis.text = element_text(size = text_size),
+                       ),
                
                prop_multi = stat %>%
                        mutate(freq = round(freq, 3)) %>%
                        ggplot() + 
                        geom_bar(aes(x = group, y = freq, fill = group), stat = "identity") +
-                       geom_text(aes(x = group, y = freq, label = scales::percent(freq)), vjust = -0.5) +
-                       scale_y_continuous(expand = expand_scale(mult = c(0, 0.1)), labels = scales::percent_format(accuracy = 0.1)) +
+                       geom_text(aes(x = group, y = freq, label = scales::percent(freq)), vjust = -0.5, size = text_size * 0.35) +
+                       scale_y_continuous(expand = expand_scale(mult = c(0, 0.1)), labels = scales::percent_format()) +
                        facet_wrap(~cluster, ncol = 4, scales = "free") +
                        scale_fill_manual(values = group_colors, name = "Stages") +
-                       labs(x = NULL, y = "Proportion"),
+                       labs(x = NULL, y = "Proportion") + 
+                       theme(strip.text.x = element_text(size = text_size)) + thm,
                
                stop("Unknown plot type")
         )
@@ -502,6 +515,40 @@ plot_GSEA <- function(gsea_res, pattern = "HALLMARK_", p_cutoff = 0.05, levels) 
         
 }
 
+
+add_exhaustion_score <- function(dataset, features, org, nbin, ctrl, name){
+  
+        if(org == "mouse"){
+                ex_genes <- vlookup(features, mm_hs, 2, 1)
+                ex_genes <- list(ex_genes[!is.na(ex_genes)])
+        } else {
+                ex_genes <- list(features)
+        }
+  
+        n_genes <- nrow(dataset@assays$integrated@scale.data)
+        genes_per_bin <- round(n_genes/nbin)
+  
+        ctrl <- ifelse(ctrl > genes_per_bin, round(genes_per_bin/3), ctrl)
+  
+        dataset <- AddModuleScore(dataset,
+                                  features = ex_genes,
+                                  ctrl = ctrl,
+                                  nbin = nbin,
+                                  name = name)
+        
+        plot_df <- data.frame(cluster = dataset[[]]$seurat_clusters,
+                              name = dataset[[]][,ncol(dataset[[]])])
+        colnames(plot_df)[2] <- name
+  
+        print(ggplot(plot_df) + 
+                  geom_boxplot(aes(x = cluster, 
+                                   y = plot_df[,2], 
+                                   fill = cluster)) +
+                  scale_fill_brewer(palette = "Set3") +
+                  labs(y = name))
+  
+        return(dataset)
+}
 
 # Test
 
