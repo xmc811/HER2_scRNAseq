@@ -156,12 +156,17 @@ analyze_merged <- function(dataset, group.levels,
         
 }
 
-get_palette <- function(ncol, palette = c("Paired", "Set2")) {
+get_palette <- function(ncolor, palette = c("Paired", "Set2", "Set1")) {
         
-        n1 <- brewer.pal.info[palette[1],][[1]]
-        n2 <- brewer.pal.info[palette[2],][[1]]
-        ful_pal <- c(brewer.pal(n = n1, name = palette[1]), brewer.pal(n = n2, name = palette[2]))
-        pal <- ful_pal[1:ncol]
+        num <- c()
+        for (i in seq(length(palette))) {
+                num[i] <- brewer.pal.info[palette[i],][[1]]
+        }
+        
+        ful_pal <- do.call(c, map2(.x = num, .y = palette, .f = brewer.pal))
+        
+        pal <- ful_pal[1:ncolor]
+        
         return(pal)
         
 }
@@ -579,24 +584,5 @@ cor(de$avg_logFC, -log(de$p_val_adj) * sign(de$avg_logFC))
 DoHeatmap(object = gfp_combined, assay = 'integrated', features =  get_top_genes(gfp_combined, gfp_markers, 6), 
           group.bar = F, raster = F, draw.lines = F)
 
-stat <- as_tibble(cbind(group = as.character(cd45_combined$group), cluster = as.character(Idents(cd45_combined))))
-stat %<>%
-        mutate(group = factor(group, levels = stages),
-               cluster = factor(cluster, levels = cd45_levels)) %>%
-        group_by(group, cluster) %>%
-        summarise(n = n()) %>%
-        mutate(freq = n / sum(n))
-
-stat %<>%
-        mutate(freq = round(freq, 3))
-
-ggplot(stat) + 
-        geom_bar(aes(x = group, y = freq, fill = group), stat = "identity") +
-        geom_text(aes(x = group, y = freq, label = scales::percent(freq)), vjust = -0.5) +
-        scale_y_continuous(expand = expand_scale(mult = c(0, 0.1)), labels = scales::percent_format(accuracy = 0.1)) +
-        facet_wrap(cluster~., scales = "free", ncol = 4) +
-        scale_fill_manual(values = c('#7bccc4','#f03b20'), name = "Stages") +
-        labs(x = NULL, y = "Proportion")
-
-stat$cluster
+get_palette(25)
 
