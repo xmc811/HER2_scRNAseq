@@ -23,13 +23,11 @@ plot_features(cd45_combined, features = c("Cd3d","Gzma","S100a8","Ebf1","Lyz2","
 
 # Identify cell markers
 
-system.time({
-        cd45_markers <- find_markers(cd45_combined, use.par = T, ncores = 6, min.diff.pct = 0.1)
-})
+cd45_markers <- FindAllMarkers(cd45_combined, only.pos = T, logfc.threshold = 0.1)
 
 # Heatmap
 
-plot_heatmap(cd45_combined, cd45_markers, 5)
+plot_heatmap(cd45_combined, cd45_markers, 5, cluster_pal = c("Set3"))
 
 # Relabeling
 
@@ -67,7 +65,7 @@ plot_stat(cd45_combined, "prop_fill", group_levels = stages, cluster_levels = cd
 
 plot_stat(cd45_combined, "prop_diverge", group_levels = stages, cluster_levels = cd45_levels, plot_ratio = 0.8)
 
-plot_stat(cd45_combined, "prop_multi", group_levels = stages, cluster_levels = cd45_levels, plot_ratio = 0.8)
+plot_stat(cd45_combined, "prop_multi", group_levels = stages, cluster_levels = cd45_levels, plot_ratio = 1.5)
 
 
 # DE analysis
@@ -76,7 +74,7 @@ cd45_diff <- find_diff_genes(dataset = cd45_combined, clusters = cd45_levels, gr
 
 cd45_hallmark_gsea <- test_GSEA(cd45_diff, cd45_levels, pathways.hallmark)
 
-plot_GSEA(cd45_hallmark_gsea, p_cutoff = 0.2, levels = cd45_levels)
+plot_GSEA(cd45_hallmark_gsea, p_cutoff = 0.1, levels = cd45_levels)
 
 
 

@@ -23,13 +23,11 @@ plot_features(gfp_combined, features = c("Krt14","Csn3","Lyz2","Ptn","S100a9","C
 
 # Identify cell markers
 
-system.time({
-gfp_markers <- find_markers(gfp_combined, use.par = T, ncores = 4, min.diff.pct = 0.2)
-})
+gfp_markers <- FindAllMarkers(gfp_combined, only.pos = T, logfc.threshold = 0.1)
 
 # Heatmap
 
-plot_heatmap(gfp_combined, gfp_markers, 6)
+plot_heatmap(gfp_combined, gfp_markers, 6, cluster_pal = c("Set3"))
 
 # Relabeling
 
@@ -72,7 +70,7 @@ gfp_diff <- find_diff_genes(dataset = gfp_combined, clusters = gfp_levels, group
 
 gfp_hallmark_gsea <- test_GSEA(gfp_diff, gfp_levels, pathways.hallmark)
 
-plot_GSEA(gfp_hallmark_gsea, p_cutoff = 0.2, levels = gfp_levels)
+plot_GSEA(gfp_hallmark_gsea, p_cutoff = 0.1, levels = gfp_levels)
 
 
 
