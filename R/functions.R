@@ -33,6 +33,7 @@ library(DoubletFinder)
 
 library(foreach)
 library(doParallel)
+library(svglite)
 
 mm_hs <- read_tsv("~/Documents/r_projects/HER2_scRNAseq/refs/mm_hs.txt", col_names = T)
 pathways.hallmark <- gmtPathways("~/Documents/r_projects/HER2_scRNAseq/refs/h.all.v6.2.symbols.gmt")
@@ -183,7 +184,7 @@ get_colors <- function(v, pal = "Paired") {
 }
 
 plot_merge <- function(dataset, reduction = "umap", group.by = "group", 
-                       colors = c('#7bccc4','#f03b20'), legend.title = "Group", labels = levels(dataset$group)) {
+                       colors = c('#92c5de','#d6604d'), legend.title = "Group", labels = levels(dataset$group)) {
         
         p <- DimPlot(object = dataset, reduction = reduction, group.by = group.by)
         
@@ -195,7 +196,7 @@ plot_merge <- function(dataset, reduction = "umap", group.by = "group",
 }
 
 plot_split <- function(dataset, reduction = "umap", split.by = "group", 
-                       colors = c('#7bccc4','#f03b20'), legend.title = "Cluster", labels = levels(dataset$seurat_clusters)) {
+                       colors = c('#92c5de','#d6604d'), legend.title = "Cluster", labels = levels(dataset$seurat_clusters)) {
         
         p <- DimPlot(object = dataset, reduction = reduction, split.by = split.by)
         
@@ -308,7 +309,7 @@ get_top_genes <- function(dataset, markers, n) {
 
 plot_heatmap <- function(dataset, markers, nfeatures,
                          cluster_pal = c("Paired", "Set2", "Set1"),
-                         group_colors = c('#92c5de','#f03b20')
+                         group_colors = c('#92c5de','#d6604d')
                          ) {
         
         df <- as_tibble(cbind(colnames(dataset), dataset$seurat_clusters, dataset$group))

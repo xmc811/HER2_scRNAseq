@@ -13,13 +13,17 @@ cd45_combined <- analyze_merged(cd45_combined, group.levels = stages,
 
 # Visualization
 
+svglite(file = "./figures/cd45_merge.svg")
 plot_merge(cd45_combined)
+dev.off()
 
 plot_cluster(cd45_combined, label = F)
 
 plot_split(cd45_combined, colors = get_colors(seq(levels(cd45_combined$seurat_clusters)), pal = "Set3"))
 
+svglite(file = "./figures/cd45_markers.svg", width = 15, height = 8)
 plot_features(cd45_combined, features = c("Cd3d","Gzma","S100a8","Ebf1","Lyz2","Siglech","Iglv1","Col1a1","Plbd1","Ptprc"), ncol = 5)
+dev.off()
 
 # Identify cell markers
 
@@ -51,19 +55,30 @@ cd45_combined <- rename_cluster(cd45_combined, cd45_labels)
 # New visualization
 
 cd45_index <- c(1:4,12,10,9,8,6,7,5)
+
+svglite(file = "./figures/cd45_cluster.svg")
 plot_cluster(cd45_combined, label = F, levels = cd45_levels, self_set_color = T, self_colors = get_colors(cd45_index))
+dev.off()
 
 # Statistics
 
+svglite(file = "./figures/cd45_group_count.svg")
 plot_stat(cd45_combined, "group_count", group_levels = stages, cluster_levels = cd45_levels, plot_ratio = 3)
+dev.off()
 
+svglite(file = "./figures/cd45_cluster_count.svg")
 plot_stat(cd45_combined, "cluster_count", group_levels = stages, cluster_levels = cd45_levels,
           self_set_color = T, self_colors = get_colors(cd45_index))
+dev.off()
 
+svglite(file = "./figures/cd45_prop_fill.svg")
 plot_stat(cd45_combined, "prop_fill", group_levels = stages, cluster_levels = cd45_levels, plot_ratio = 3,
           self_set_color = T, self_colors = get_colors(cd45_index))
+dev.off()
 
+svglite(file = "./figures/cd45_prop_diverge.svg")
 plot_stat(cd45_combined, "prop_diverge", group_levels = stages, cluster_levels = cd45_levels, plot_ratio = 0.8)
+dev.off()
 
 plot_stat(cd45_combined, "prop_multi", group_levels = stages, cluster_levels = cd45_levels, plot_ratio = 1.5)
 
@@ -74,7 +89,9 @@ cd45_diff <- find_diff_genes(dataset = cd45_combined, clusters = cd45_levels, gr
 
 cd45_hallmark_gsea <- test_GSEA(cd45_diff, cd45_levels, pathways.hallmark)
 
+svglite(file = "./figures/cd45_gsea.svg", width = 12, height = 12)
 plot_GSEA(cd45_hallmark_gsea, p_cutoff = 0.1, levels = cd45_levels)
+dev.off()
 
 
 
