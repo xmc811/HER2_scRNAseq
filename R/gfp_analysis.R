@@ -92,8 +92,6 @@ dev.off()
 
 # Test
 
-hist(gfp_combined$nCount_RNA, breaks = 100)
-
 
 
 

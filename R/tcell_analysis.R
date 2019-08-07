@@ -89,4 +89,3 @@ plot_measure(tcell_combined, measure = "Exhaust_Score1", plot_type = "cluster_gr
 
 
 # Test
-levels(Idents(cd45_combined))

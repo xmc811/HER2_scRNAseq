@@ -60,8 +60,7 @@ scRNA_wahl <- purrr::map(scRNA_wahl, filter_norm_10X)
 
 # Test
 
-rownames(wahl)[str_detect(rownames(wahl), "_")]
-test <- CreateSeuratObject(counts = wahl_list[[1]])
+
 
 
 
