@@ -33,6 +33,7 @@ library(DoubletFinder)
 
 library(foreach)
 library(doParallel)
+library(svglite)
 
 mm_hs <- read_tsv("~/Documents/r_projects/HER2_scRNAseq/refs/mm_hs.txt", col_names = T)
 pathways.hallmark <- gmtPathways("~/Documents/r_projects/HER2_scRNAseq/refs/h.all.v6.2.symbols.gmt")
@@ -156,12 +157,17 @@ analyze_merged <- function(dataset, group.levels,
         
 }
 
-get_palette <- function(ncol, palette = c("Paired", "Set2")) {
+get_palette <- function(ncolor, palette = c("Paired", "Set2", "Set1")) {
         
-        n1 <- brewer.pal.info[palette[1],][[1]]
-        n2 <- brewer.pal.info[palette[2],][[1]]
-        ful_pal <- c(brewer.pal(n = n1, name = palette[1]), brewer.pal(n = n2, name = palette[2]))
-        pal <- ful_pal[1:ncol]
+        num <- c()
+        for (i in seq(length(palette))) {
+                num[i] <- brewer.pal.info[palette[i],][[1]]
+        }
+        
+        ful_pal <- do.call(c, map2(.x = num, .y = palette, .f = brewer.pal))
+        
+        pal <- ful_pal[1:ncolor]
+        
         return(pal)
         
 }
@@ -178,7 +184,7 @@ get_colors <- function(v, pal = "Paired") {
 }
 
 plot_merge <- function(dataset, reduction = "umap", group.by = "group", 
-                       colors = c('#7bccc4','#f03b20'), legend.title = "Group", labels = levels(dataset$group)) {
+                       colors = c('#92c5de','#d6604d'), legend.title = "Group", labels = levels(dataset$group)) {
         
         p <- DimPlot(object = dataset, reduction = reduction, group.by = group.by)
         
@@ -190,7 +196,7 @@ plot_merge <- function(dataset, reduction = "umap", group.by = "group",
 }
 
 plot_split <- function(dataset, reduction = "umap", split.by = "group", 
-                       colors = c('#7bccc4','#f03b20'), legend.title = "Cluster", labels = levels(dataset$seurat_clusters)) {
+                       colors = c('#92c5de','#d6604d'), legend.title = "Cluster", labels = levels(dataset$seurat_clusters)) {
         
         p <- DimPlot(object = dataset, reduction = reduction, split.by = split.by)
         
@@ -207,8 +213,8 @@ plot_cluster <- function(dataset, reduction = "umap", label = T, levels = NULL,
                          self_colors,
                          palette = c("Set2", "Paired")) {
         
-        ncol <- length(levels(Idents(dataset)))
-        colors <- if (self_set_color) self_colors else (get_palette(ncol, palette))
+        ncolor <- length(levels(Idents(dataset)))
+        colors <- if (self_set_color) self_colors else (get_palette(ncolor, palette))
         
         tmp <- dataset
         
@@ -247,6 +253,7 @@ plot_features <- function(dataset, features, ncol) {
         CombinePlots(plots = p_gene, ncol = ncol)
 }
 
+# This function is deprecated
 find_markers <- function(dataset, use.par = F, ncores = 4, min.diff.pct = -Inf) {
         
         DefaultAssay(object = dataset) <- "RNA"
@@ -290,20 +297,20 @@ get_top_genes <- function(dataset, markers, n) {
         
         int_features <- rownames(dataset@assays$integrated@scale.data)
         
-        a <- str_subset(colnames(markers), "logFC")
-        
         df <- markers %>%
-                filter(feature %in% int_features) %>%
-                mutate(logFC = (!!sym(a[1])) + (!!sym(a[2]))) %>%
-                arrange(desc(logFC)) %>%
+                filter(gene %in% int_features) %>%
+                arrange(desc(avg_logFC)) %>%
                 group_by(cluster) %>%
                 filter(row_number() <= n) %>%
                 arrange(cluster)
         
-        return(df$feature)
+        return(df$gene)
 }
 
-plot_heatmap <- function(dataset, markers, nfeatures) {
+plot_heatmap <- function(dataset, markers, nfeatures,
+                         cluster_pal = c("Paired", "Set2", "Set1"),
+                         group_colors = c('#92c5de','#d6604d')
+                         ) {
         
         df <- as_tibble(cbind(colnames(dataset), dataset$seurat_clusters, dataset$group))
         colnames(df) <- c("barcode","cluster","group")
@@ -320,10 +327,10 @@ plot_heatmap <- function(dataset, markers, nfeatures) {
         
         ncol <- length(levels(Idents(dataset)))
         
-        pal1 <- get_palette(ncol = ncol)
+        pal1 <- get_palette(ncolor = ncol, palette = cluster_pal)
         col1 <- pal1[as.numeric(df$cluster)]
         
-        pal2 <- c('#7bccc4','#f03b20')
+        pal2 <- group_colors
         col2 <- pal2[as.numeric(factor(df$group))]
         
         p_heat + 
@@ -352,8 +359,8 @@ plot_stat <- function(dataset, plot_type,
                       group_levels, cluster_levels,
                       self_set_color = F,
                       self_colors,
-                      group_colors = c('#7bccc4','#f03b20'),
-                      palette = c("Paired", "Set2"),
+                      group_colors = c('#92c5de','#d6604d'),
+                      palette = c("Set3", "Paired"),
                       plot_ratio = 1,
                       text_size = 10) {
         
@@ -383,7 +390,7 @@ plot_stat <- function(dataset, plot_type,
                        geom_col(aes(x = group, y = `sum(n)`, fill = group)) +
                        geom_text(aes(x = group, y = `sum(n)`, label = `sum(n)`), 
                                  vjust = -0.5, size = text_size * 0.35) +
-                       scale_fill_manual(values = c('#7bccc4','#f03b20'), name = "Group") + 
+                       scale_fill_manual(values = group_colors, name = "Group") + 
                        labs(y = "Counts") + thm,
                
                cluster_count = stat %>%
@@ -393,7 +400,7 @@ plot_stat <- function(dataset, plot_type,
                        geom_col(aes(x = cluster, y = `sum(n)`, fill = cluster)) +
                        geom_text(aes(x = cluster, y = `sum(n)`, label = `sum(n)`), 
                                  vjust = -0.5, size = text_size * 0.35) +
-                       scale_fill_manual(values = cluster_colors, name = "Clusters") + 
+                       scale_fill_manual(values = cluster_colors, name = "Cluster") + 
                        labs(y = "Counts") + 
                        theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
                        thm,
@@ -401,7 +408,7 @@ plot_stat <- function(dataset, plot_type,
                prop_fill = ggplot(stat) + 
                        geom_bar(aes(x = group, y = freq, fill = cluster), position = "fill", stat = "identity") +
                        scale_y_continuous(labels = scales::percent) +
-                       scale_fill_manual(values = cluster_colors, name = "Clusters") +
+                       scale_fill_manual(values = cluster_colors, name = "Cluster") +
                        labs(y = "Proportion") + thm,
                
                prop_diverge = stat %>%
@@ -412,7 +419,7 @@ plot_stat <- function(dataset, plot_type,
                        geom_bar(aes(x=cluster, y = freq, fill = group), stat = "identity") +
                        geom_text(aes(x=cluster, y = freq + 0.03 * sign(freq), label = percent(abs(freq), digits = 1)), size = text_size * 0.35) +
                        coord_flip() +
-                       scale_fill_manual(values = group_colors, name = "Stages") +
+                       scale_fill_manual(values = group_colors, name = "Group") +
                        scale_y_continuous(breaks = pretty(c(stat$freq, -stat$freq)),
                                           labels = scales::percent(abs(pretty(c(stat$freq, -stat$freq))))) +
                        labs(x = NULL, y = "Proportion") +
@@ -430,7 +437,7 @@ plot_stat <- function(dataset, plot_type,
                        geom_text(aes(x = group, y = freq, label = scales::percent(freq)), vjust = -0.5, size = text_size * 0.35) +
                        scale_y_continuous(expand = expand_scale(mult = c(0, 0.1)), labels = scales::percent_format()) +
                        facet_wrap(~cluster, ncol = 4, scales = "free") +
-                       scale_fill_manual(values = group_colors, name = "Stages") +
+                       scale_fill_manual(values = group_colors, name = "Group") +
                        labs(x = NULL, y = "Proportion") + 
                        theme(strip.text.x = element_text(size = text_size)) + thm,
                
@@ -502,101 +509,84 @@ plot_GSEA <- function(gsea_res, pattern = "HALLMARK_", p_cutoff = 0.05, levels) 
         
         gsea_res %>%
                 mutate(pathway = str_remove(string = pathway, pattern = pattern)) %>%
-                mutate(color = as.factor((padj < p_cutoff) * (ifelse(NES > 0, 1, -1)))) %>%
+                mutate(color = -log10(padj) * sign(NES)) %>%
+                mutate(sig = as.factor(ifelse(padj < p_cutoff, 1, 0))) %>%
                 ggplot(aes(x = factor(pathway), y = factor(cluster, levels = levels))) + 
                 geom_point(aes(size = abs(NES), color = color)) +
-                scale_color_manual(name = '', 
-                                   values = c('dodgerblue1','grey','red'),
-                                   labels = c('Down-regulation','Non-significant','Up-regulation')) +
+                scale_size(name = "Normalized\nEnrichment\nScore Size") +
+                scale_color_gradient2(name = bquote(-log[10]~"Adj. p-value"), low = 'dodgerblue1', mid = 'grey', high = 'red', midpoint = 0) +
                 coord_flip() +
-                theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
-                      axis.title.x = element_blank(),
+                geom_point(aes(shape = sig), size = 5.5, stroke = 1) +
+                scale_shape_manual(name = "Adj. p-value", values=c(NA, 0), labels = c(paste0("\u2265 ",p_cutoff), paste0("< ",p_cutoff))) +
+                theme(axis.title.x = element_blank(),
                       axis.title.y = element_blank())
         
 }
 
 
-add_exhaustion_score <- function(dataset, features, org, nbin, ctrl, name){
+add_program_score <- function(dataset, features, org = "human", nbin = 20, ctrl = 10, name){
   
         if(org == "mouse"){
-                ex_genes <- vlookup(features, mm_hs, 2, 1)
-                ex_genes <- list(ex_genes[!is.na(ex_genes)])
+                prog_genes <- vlookup(features, mm_hs, 2, 1)
+                prog_genes <- list(prog_genes[!is.na(prog_genes)])
         } else {
                 ex_genes <- list(features)
         }
-  
+        
         n_genes <- nrow(dataset@assays$integrated@scale.data)
+        
         genes_per_bin <- round(n_genes/nbin)
   
         ctrl <- ifelse(ctrl > genes_per_bin, round(genes_per_bin/3), ctrl)
   
         dataset <- AddModuleScore(dataset,
-                                  features = ex_genes,
+                                  features = prog_genes,
                                   ctrl = ctrl,
                                   nbin = nbin,
                                   name = name)
-        
-        plot_df <- data.frame(cluster = dataset[[]]$seurat_clusters,
-                              name = dataset[[]][,ncol(dataset[[]])])
-        colnames(plot_df)[2] <- name
-  
-        print(ggplot(plot_df) + 
-                  geom_boxplot(aes(x = cluster, 
-                                   y = plot_df[,2], 
-                                   fill = cluster)) +
-                  scale_fill_brewer(palette = "Set3") +
-                  labs(y = name))
   
         return(dataset)
+}
+
+
+plot_measure <- function(dataset, measure, plot_type, group_levels, cluster_levels) {
+        
+        df <- tibble(group = as.character(dataset$group),
+                     cluster = as.character(Idents(dataset)),
+                     measure = as.numeric(dataset@meta.data[[measure]]))
+        
+        thm <- theme(axis.title.x = element_blank(),
+                     axis.title.y = element_blank())
+        
+        switch(plot_type,
+               group = ggplot(df, aes(x = factor(group, levels = group_levels), 
+                                      y = measure,
+                                      fill = factor(group, levels = group_levels))) + 
+                       geom_boxplot() +
+                       scale_fill_manual(values = get_colors(1:length(group_levels)),
+                                         name = "Group") + thm,
+               
+               cluster = ggplot(df, aes(x = factor(cluster, levels = cluster_levels), 
+                                        y = measure,
+                                        fill = factor(cluster, levels = cluster_levels))) + 
+                         geom_boxplot() +
+                         scale_fill_manual(values = get_colors(1:length(cluster_levels)), 
+                                           name = "Cluster") + thm,
+               
+               cluster_group = ggplot(df, aes(x = factor(cluster, levels = cluster_levels), 
+                                              y = measure,
+                                              fill = factor(group, levels = group_levels))) + 
+                               geom_boxplot() +
+                               scale_fill_manual(values = get_colors(1:length(group_levels)), 
+                                                 name = "Group") + thm,
+               
+               stop("Unknown plot type")
+        )
+        
 }
 
 # Test
 
 
-gfp.combined <- gfp_combined
-
-gfp.combined$celltype.group <- paste(Idents(object = gfp.combined), gfp.combined$group, sep = "_")
-Idents(object = gfp.combined) <- "celltype.group"
-Idents(object = gfp.combined) <- "celltype"
         
-de <- FindMarkers(gfp.combined, 
-                  ident.1 = paste(gfp_levels[1], stages[2], sep = "_"),
-                  ident.2 = paste(gfp_levels[1], stages[1], sep = "_"),
-                  logfc.threshold = 0,
-                  assay = "RNA")
-
-DefaultAssay(gfp.combined) <- "RNA"
-
-test <- find_diff_genes(gfp_combined, gfp_levels, stages, logfc = 0.3)
-
-
-hist(de$avg_logFC, breaks = 100)
-hist(-log10(de$p_val_adj) * sign(de$avg_logFC), breaks = 100)
-cor(de$avg_logFC, -log(de$p_val_adj) * sign(de$avg_logFC))
-
-
-
-DoHeatmap(object = gfp_combined, assay = 'integrated', features =  get_top_genes(gfp_combined, gfp_markers, 6), 
-          group.bar = F, raster = F, draw.lines = F)
-
-stat <- as_tibble(cbind(group = as.character(cd45_combined$group), cluster = as.character(Idents(cd45_combined))))
-stat %<>%
-        mutate(group = factor(group, levels = stages),
-               cluster = factor(cluster, levels = cd45_levels)) %>%
-        group_by(group, cluster) %>%
-        summarise(n = n()) %>%
-        mutate(freq = n / sum(n))
-
-stat %<>%
-        mutate(freq = round(freq, 3))
-
-ggplot(stat) + 
-        geom_bar(aes(x = group, y = freq, fill = group), stat = "identity") +
-        geom_text(aes(x = group, y = freq, label = scales::percent(freq)), vjust = -0.5) +
-        scale_y_continuous(expand = expand_scale(mult = c(0, 0.1)), labels = scales::percent_format(accuracy = 0.1)) +
-        facet_wrap(cluster~., scales = "free", ncol = 4) +
-        scale_fill_manual(values = c('#7bccc4','#f03b20'), name = "Stages") +
-        labs(x = NULL, y = "Proportion")
-
-stat$cluster
 
