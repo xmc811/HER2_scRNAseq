@@ -585,8 +585,53 @@ plot_measure <- function(dataset, measure, plot_type, group_levels, cluster_leve
         
 }
 
+seurat_to_monocle <- function(dataset, subset = F, clusters = NULL) {
+        
+        dataset$cluster <- Idents(dataset)
+        
+        data <- GetAssayData(dataset, assay = 'RNA', slot = 'counts')
+        pd <- new('AnnotatedDataFrame', data = dataset@meta.data)
+        fd <- new('AnnotatedDataFrame', 
+                      data = data.frame(gene_short_name = row.names(data), row.names = rownames(data)))
+        
+        cds <- newCellDataSet(data,
+                                  phenoData = pd,
+                                  featureData = fd,
+                                  lowerDetectionLimit = 0.5,
+                                  expressionFamily = negbinomial.size())
+        cds %<>% 
+                estimateSizeFactors() %>%
+                estimateDispersions() %>%
+                detectGenes(min_expr = 0.1)
+        
+        if (subset) {
+                cds <- cds[,row.names(subset(pData(cds), cluster %in% clusters))]
+        }
+        
+        return(cds)
+
+}
+
+analyze_monocle <- function(cds, rev = F) {
+        
+        expressed_genes <- row.names(subset(fData(cds), num_cells_expressed >= 10))
+        
+        diff_test_res <- differentialGeneTest(cds[expressed_genes,], fullModelFormulaStr = "~group")
+        
+        ordering_genes <- row.names(subset(diff_test_res, qval < 10E-70))
+        
+        cds %<>% 
+                setOrderingFilter(ordering_genes) %>%
+                reduceDimension(max_components = 2, method = 'DDRTree') %>%
+                orderCells(reverse = rev)
+        
+        return(cds)
+
+}
+
+
 # Test
 
-
         
+epi_cds <- seurat_to_monocle(dataset = gfp_combined, subset = T, clusters = c('Basal 1','Luminal 1','Basal 2','Luminal 2'))
 

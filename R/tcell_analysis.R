@@ -21,7 +21,9 @@ svglite(file = "./figures/tcell_merge.svg")
 plot_merge(tcell_combined)
 dev.off()
 
+svglite(file = "./figures/tcell_cluster.svg")
 plot_cluster(tcell_combined, label = F)
+dev.off()
 
 plot_split(tcell_combined, colors = get_colors(seq(levels(tcell_combined$seurat_clusters)), pal = "Set3"))
 
@@ -43,14 +45,14 @@ tcell_labels <- c("CD8+ Non-Ex",
                   "CD8+ Non-Ex",
                   "CD4+ Non-Ex",
                   "CD4+ Ex",
-                  "CD8+ Ex",
+                  "CD8+ Non-Ex",
                   "CD8+ Ex",
                   "CD4+ Ex",
                   "CD8+ Ex",
                   "CD8+ Ex",
                   "CD4+ Ex")
 
-tcell_levels <- tcell_labels[c(3,4,1,5)]
+tcell_levels <- tcell_labels[c(3,4,1,6)]
 
 tcell_combined <- rename_cluster(tcell_combined, tcell_labels)
 
@@ -84,7 +86,10 @@ exhaust_genes <- read.table("./refs/exhaustion_gene_hs", stringsAsFactors = F)[[
 
 tcell_combined <- add_program_score(tcell_combined, features = exhaust_genes, org = "mouse", nbin = 20, ctrl = 10, name = "Exhaust_Score")
 
+svglite(file = "./figures/tcell_ex_score.svg")
 plot_measure(tcell_combined, measure = "Exhaust_Score1", plot_type = "cluster", group_levels = stages, cluster_levels = tcell_levels)
+dev.off()
+
 plot_measure(tcell_combined, measure = "Exhaust_Score1", plot_type = "cluster_group", group_levels = stages, cluster_levels = tcell_levels)
 
 
