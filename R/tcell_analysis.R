@@ -8,18 +8,12 @@ tcell_combined <- ScaleData(object = tcell_combined,
                           verbose = T)
 
 tcell_combined <- analyze_merged(tcell_combined, group.levels = stages,
-                               verbose = T, npcs = 50, dims = 1:20, nnei = 45, k.param = 45, min.dist = 0.07, spread = 0.5, resolution = 0.05)
+                               verbose = T, npcs = 50, dims = 1:20, nnei = 45, k.param = 45, min.dist = 0.07, spread = 0.5, resolution = 0.1)
 
-plot_cluster(tcell_combined, label = F)
-
-tcell_combined <- subset(x = tcell_combined, idents = c('0', '1', '2', '3'))
-
-plot_cluster(tcell_combined, label = F)
+tcell_combined <- subset(x = tcell_combined, idents = as.character(0:4))
 
 tcell_combined <- analyze_merged(tcell_combined, group.levels = stages,
-                                 verbose = T, npcs = 50, dims = 1:20, nnei = 40, k.param = 40, min.dist = 0.01, spread = 0.5, resolution = 0.01)
-
-plot_cluster(tcell_combined, label = F)
+                                 verbose = T, npcs = 50, dims = 1:20, nnei = 40, k.param = 40, min.dist = 0.005, spread = 0.5, resolution = 0.2)
 
 # Visualization
 
@@ -45,16 +39,22 @@ plot_heatmap(tcell_combined, tcell_markers, 10, cluster_pal = c("Set3"))
 
 # Relabeling
 
-tcell_labels <- c("CD8+ Non-Ex", 
-                "CD4+", 
-                "CD8+ Ex"
-                )
+tcell_labels <- c("CD8+ Non-Ex",
+                  "CD8+ Non-Ex",
+                  "CD4+ Non-Ex",
+                  "CD4+ Ex",
+                  "CD8+ Ex",
+                  "CD8+ Ex",
+                  "CD4+ Ex",
+                  "CD8+ Ex",
+                  "CD8+ Ex",
+                  "CD4+ Ex")
 
-tcell_levels <- tcell_labels[c(1,3,2)]
+tcell_levels <- tcell_labels[c(3,4,1,5)]
 
 tcell_combined <- rename_cluster(tcell_combined, tcell_labels)
 
-tcell_index <- 1:3
+tcell_index <- 1:4
 
 # Statistics
 
@@ -80,6 +80,12 @@ plot_stat(tcell_combined, "prop_multi", group_levels = stages, cluster_levels = 
 
 # T cell exhaustion score
 
+exhaust_genes <- read.table("./refs/exhaustion_gene_hs", stringsAsFactors = F)[[1]]
+
+tcell_combined <- add_program_score(tcell_combined, features = exhaust_genes, org = "mouse", nbin = 20, ctrl = 10, name = "Exhaust_Score")
+
+plot_measure(tcell_combined, measure = "Exhaust_Score1", plot_type = "cluster", group_levels = stages, cluster_levels = tcell_levels)
+plot_measure(tcell_combined, measure = "Exhaust_Score1", plot_type = "cluster_group", group_levels = stages, cluster_levels = tcell_levels)
 
 
 # Test

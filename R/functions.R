@@ -400,7 +400,7 @@ plot_stat <- function(dataset, plot_type,
                        geom_col(aes(x = cluster, y = `sum(n)`, fill = cluster)) +
                        geom_text(aes(x = cluster, y = `sum(n)`, label = `sum(n)`), 
                                  vjust = -0.5, size = text_size * 0.35) +
-                       scale_fill_manual(values = cluster_colors, name = "Clusters") + 
+                       scale_fill_manual(values = cluster_colors, name = "Cluster") + 
                        labs(y = "Counts") + 
                        theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
                        thm,
@@ -408,7 +408,7 @@ plot_stat <- function(dataset, plot_type,
                prop_fill = ggplot(stat) + 
                        geom_bar(aes(x = group, y = freq, fill = cluster), position = "fill", stat = "identity") +
                        scale_y_continuous(labels = scales::percent) +
-                       scale_fill_manual(values = cluster_colors, name = "Clusters") +
+                       scale_fill_manual(values = cluster_colors, name = "Cluster") +
                        labs(y = "Proportion") + thm,
                
                prop_diverge = stat %>%
@@ -419,7 +419,7 @@ plot_stat <- function(dataset, plot_type,
                        geom_bar(aes(x=cluster, y = freq, fill = group), stat = "identity") +
                        geom_text(aes(x=cluster, y = freq + 0.03 * sign(freq), label = percent(abs(freq), digits = 1)), size = text_size * 0.35) +
                        coord_flip() +
-                       scale_fill_manual(values = group_colors, name = "Stages") +
+                       scale_fill_manual(values = group_colors, name = "Group") +
                        scale_y_continuous(breaks = pretty(c(stat$freq, -stat$freq)),
                                           labels = scales::percent(abs(pretty(c(stat$freq, -stat$freq))))) +
                        labs(x = NULL, y = "Proportion") +
@@ -437,7 +437,7 @@ plot_stat <- function(dataset, plot_type,
                        geom_text(aes(x = group, y = freq, label = scales::percent(freq)), vjust = -0.5, size = text_size * 0.35) +
                        scale_y_continuous(expand = expand_scale(mult = c(0, 0.1)), labels = scales::percent_format()) +
                        facet_wrap(~cluster, ncol = 4, scales = "free") +
-                       scale_fill_manual(values = group_colors, name = "Stages") +
+                       scale_fill_manual(values = group_colors, name = "Group") +
                        labs(x = NULL, y = "Proportion") + 
                        theme(strip.text.x = element_text(size = text_size)) + thm,
                
@@ -524,38 +524,65 @@ plot_GSEA <- function(gsea_res, pattern = "HALLMARK_", p_cutoff = 0.05, levels) 
 }
 
 
-add_exhaustion_score <- function(dataset, features, org, nbin, ctrl, name){
+add_program_score <- function(dataset, features, org = "human", nbin = 20, ctrl = 10, name){
   
         if(org == "mouse"){
-                ex_genes <- vlookup(features, mm_hs, 2, 1)
-                ex_genes <- list(ex_genes[!is.na(ex_genes)])
+                prog_genes <- vlookup(features, mm_hs, 2, 1)
+                prog_genes <- list(prog_genes[!is.na(prog_genes)])
         } else {
                 ex_genes <- list(features)
         }
-  
+        
         n_genes <- nrow(dataset@assays$integrated@scale.data)
+        
         genes_per_bin <- round(n_genes/nbin)
   
         ctrl <- ifelse(ctrl > genes_per_bin, round(genes_per_bin/3), ctrl)
   
         dataset <- AddModuleScore(dataset,
-                                  features = ex_genes,
+                                  features = prog_genes,
                                   ctrl = ctrl,
                                   nbin = nbin,
                                   name = name)
-        
-        plot_df <- data.frame(cluster = dataset[[]]$seurat_clusters,
-                              name = dataset[[]][,ncol(dataset[[]])])
-        colnames(plot_df)[2] <- name
-  
-        print(ggplot(plot_df) + 
-                  geom_boxplot(aes(x = cluster, 
-                                   y = plot_df[,2], 
-                                   fill = cluster)) +
-                  scale_fill_brewer(palette = "Set3") +
-                  labs(y = name))
   
         return(dataset)
+}
+
+
+plot_measure <- function(dataset, measure, plot_type, group_levels, cluster_levels) {
+        
+        df <- tibble(group = as.character(dataset$group),
+                     cluster = as.character(Idents(dataset)),
+                     measure = as.numeric(dataset@meta.data[[measure]]))
+        
+        thm <- theme(axis.title.x = element_blank(),
+                     axis.title.y = element_blank())
+        
+        switch(plot_type,
+               group = ggplot(df, aes(x = factor(group, levels = group_levels), 
+                                      y = measure,
+                                      fill = factor(group, levels = group_levels))) + 
+                       geom_boxplot() +
+                       scale_fill_manual(values = get_colors(1:length(group_levels)),
+                                         name = "Group") + thm,
+               
+               cluster = ggplot(df, aes(x = factor(cluster, levels = cluster_levels), 
+                                        y = measure,
+                                        fill = factor(cluster, levels = cluster_levels))) + 
+                         geom_boxplot() +
+                         scale_fill_manual(values = get_colors(1:length(cluster_levels)), 
+                                           name = "Cluster") + thm,
+               
+               cluster_group = ggplot(df, aes(x = factor(cluster, levels = cluster_levels), 
+                                              y = measure,
+                                              fill = factor(group, levels = group_levels))) + 
+                               geom_boxplot() +
+                               scale_fill_manual(values = get_colors(1:length(group_levels)), 
+                                                 name = "Group") + thm,
+               
+               stop("Unknown plot type")
+        )
+        
 }
 
 # Test
