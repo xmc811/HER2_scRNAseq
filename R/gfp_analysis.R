@@ -92,9 +92,23 @@ dev.off()
 
 # Test
 
+test <- gfp_combined
+test <- rename_cluster(test, c("Basal", 
+                                             "Luminal", 
+                                             "Macrophage", 
+                                             "Luminal",
+                                             "Neutrophil",
+                                             "NS Immune",
+                                             "Basal", 
+                                             "Fibroblast"))
+levels(Idents(test))
 
+test_diff <- find_diff_genes(dataset = test, clusters = levels(Idents(test)), groups = stages, logfc = 0)
+test_hallmark_gsea <- test_GSEA(test_diff, levels(Idents(test)), pathways.hallmark)
 
-
+svglite(file = "./figures/gfp_gsea_2.svg", width = 12, height = 12)
+plot_GSEA(test_hallmark_gsea, p_cutoff = 0.1, levels = levels(Idents(test)))
+dev.off()
 
 
 
