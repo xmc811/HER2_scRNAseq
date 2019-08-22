@@ -1,43 +1,43 @@
 
-# T cell subset
+# Neutrophil subset
 
-tcell_combined <- subset(x = cd45_combined, idents = c("T Cell 1", "T Cell 2", "T Cell 3", "T Cell 4"))
+nf_combined <- subset(x = cd45_combined, idents = c("Neutrophil"))
 
-tcell_combined <- ScaleData(object = tcell_combined,
-                          vars.to.regress = c("percent.mt","nCount_RNA","S.Score","G2M.Score"),
-                          verbose = T)
+nf_combined <- ScaleData(object = nf_combined,
+                            vars.to.regress = c("percent.mt","nCount_RNA","S.Score","G2M.Score"),
+                            verbose = T)
 
-tcell_combined <- analyze_merged(tcell_combined, group.levels = stages,
-                               verbose = T, npcs = 50, dims = 1:20, nnei = 45, k.param = 45, min.dist = 0.07, spread = 0.5, resolution = 0.1)
+nf_combined <- analyze_merged(nf_combined, group.levels = stages,
+                                 verbose = T, npcs = 50, dims = 1:20, nnei = 25, k.param = 25, min.dist = 0.05, spread = 0.5, resolution = 0.1)
 
-tcell_combined <- subset(x = tcell_combined, idents = as.character(0:4))
+nf_combined <- subset(x = nf_combined, idents = as.character(0:4))
 
-tcell_combined <- analyze_merged(tcell_combined, group.levels = stages,
+nf_combined <- analyze_merged(nf_combined, group.levels = stages,
                                  verbose = T, npcs = 50, dims = 1:20, nnei = 40, k.param = 40, min.dist = 0.005, spread = 0.5, resolution = 0.2)
 
 # Visualization
 
-svglite(file = "./figures/tcell_merge.svg")
-plot_merge(tcell_combined)
+svglite(file = "./figures/nf_merge.svg")
+plot_merge(nf_combined)
 dev.off()
 
-svglite(file = "./figures/tcell_cluster.svg")
-plot_cluster(tcell_combined, label = F)
+svglite(file = "./figures/nf_cluster.svg")
+plot_cluster(nf_combined, label = F)
 dev.off()
 
-plot_split(tcell_combined, colors = get_colors(seq(levels(tcell_combined$seurat_clusters)), pal = "Set3"))
+plot_split(nf_combined, colors = get_colors(seq(levels(nf_combined$seurat_clusters)), pal = "Set3"))
 
-svglite(file = "./figures/tcell_markers.svg", width = 15, height = 8)
-plot_features(tcell_combined, features = c("Cd4","Cd8a","Cd8b1","Satb1","Ctla4","Pdcd1","Cd3d"), ncol = 4)
+svglite(file = "./figures/nf_markers.svg", width = 15, height = 8)
+plot_features(nf_combined, features = c("Cd4","Cd8a","Cd8b1","Satb1","Ctla4","Pdcd1","Cd3d"), ncol = 4)
 dev.off()
 
 # Identify cell markers
 
-tcell_markers <- FindAllMarkers(tcell_combined, only.pos = T, logfc.threshold = 0.1)
+nf_markers <- FindAllMarkers(nf_combined, only.pos = T, logfc.threshold = 0.1)
 
 # Heatmap
 
-plot_heatmap(tcell_combined, tcell_markers, 10, cluster_pal = c("Set3"))
+plot_heatmap(nf_combined, nf_markers, 10, cluster_pal = c("Set3"))
 
 # Relabeling
 

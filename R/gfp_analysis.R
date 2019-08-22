@@ -92,9 +92,88 @@ dev.off()
 
 # Test
 
+head(Idents(gfp_combined))
 
 
 
+test <- FindMarkers(gfp_combined, 
+            ident.1 = "Basal 1",
+            ident.2 = "Basal 2",
+            logfc.threshold = 0,
+            assay = "RNA")
+test %>%
+            add_column(feature = rownames(test), .before = 1) %>%
+            add_column(cluster = "Basal 1 vs 2", .after = 1) %>%    
+            as_tibble() %>%
+            test_GSEA(clusters = c("Basal 1 vs 2"), pathway = pathways.hallmark) %>%
+            plot_GSEA(p_cutoff = 0.1, levels = c("Basal 1 vs 2"))
+
+
+cluster_diff <- function(object, clusters, thr) {
+        
+        test <- FindMarkers(object, 
+                            ident.1 = clusters[1],
+                            ident.2 = clusters[2],
+                            logfc.threshold = thr,
+                            assay = "RNA")
+        
+        label <- paste0(clusters[1], clusters[2])
+        
+        test %>%
+                add_column(feature = rownames(test), .before = 1) %>%
+                add_column(cluster = label, .after = 1) %>%    
+                as_tibble() %>%
+                test_GSEA(clusters = label, pathway = pathways.hallmark) %>%
+                plot_GSEA(p_cutoff = 0.05, levels = label)
+        
+}
+
+cluster_diff(gfp_combined, c("Basal 1", "Basal 2"), thr = 0)
+
+cluster_diff(gfp_combined, c("Basal 1", "Luminal 1"), thr = 0)
+
+cluster_diff(gfp_combined, c("Basal 2", "Luminal 1"), thr = 0)
+
+cluster_diff(gfp_combined, c("Luminal 2", "Luminal 1"), thr = 0)
+
+
+test <- gfp_combined
+
+test$celltype.group <- paste(Idents(object = test), test$group, sep = "_")
+Idents(object = test) <- "celltype.group"
+
+head(Idents(test))
+
+cluster_diff(test, c("Basal 1_Early", "Basal 2_Early"), thr = 0)
+cluster_diff(test, c("Basal 1_Advanced", "Basal 2_Advanced"), thr = 0)
+
+cluster_diff(test, c("Basal 1_Early", "Luminal 1_Early"), thr = 0)
+cluster_diff(test, c("Basal 1_Advanced", "Luminal 1_Advanced"), thr = 0)
+
+cluster_diff(test, c("Basal 2_Early", "Luminal 1_Early"), thr = 0)
+cluster_diff(test, c("Basal 2_Advanced", "Luminal 1_Advanced"), thr = 0)
+
+plot_GSEA(test_GSEA(gfp_diff, gfp_levels, pathways.hallmark[1]), levels = gfp_levels)
+
+pathways.IL17 <- list()
+pathways.IL17$HALLMARK_IL17 <- pathways.hallmark$HALLMARK_TNFA_SIGNALING_VIA_NFKB
+
+plot_GSEA(test_GSEA(gfp_diff, gfp_levels, pathways.IL17), levels = gfp_levels)
+plot_GSEA(test_GSEA(cd45_diff, cd45_levels, pathways.IL17), levels = cd45_levels)
+
+tibble(x = cd45_levels, y = rnorm(n = 11, mean = 2, sd = 1), z = runif(n = 11, min = 1, max = 2.5), p = 1) %>%
+        ggplot(aes(x = factor(p), y = factor(x))) + 
+        geom_point(aes(size = abs(z), color = y)) +
+        scale_size(name = "Normalized\nEnrichment\nScore Size") +
+        scale_color_gradient2(name = bquote(-log[10]~"Adj. p-value"), low = 'dodgerblue1', mid = 'grey', high = 'red', midpoint = 0) +
+        coord_flip() +
+        geom_point(aes(shape = factor(p)), size = 5.5, stroke = 1) +
+        scale_shape_manual(name = "Adj. p-value", values=c(NA, 0)) +
+        theme(axis.title.x = element_blank(),
+              axis.title.y = element_blank())
+
+
+test_GSEA(gfp_diff, gfp_levels, pathway = pathways.IL17)
 
 
 

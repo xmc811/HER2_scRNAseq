@@ -25,6 +25,10 @@ svglite(file = "./figures/cd45_markers.svg", width = 15, height = 8)
 plot_features(cd45_combined, features = c("Cd3d","Gzma","S100a8","Ebf1","Lyz2","Siglech","Iglv1","Col1a1","Plbd1","Ptprc"), ncol = 5)
 dev.off()
 
+svglite(file = "./figures/cd45_markers_2.svg", width = 15, height = 8)
+plot_features(cd45_combined, features = c("Cd4","Cd8a", "Cd8b1"), ncol = 3)
+dev.off()
+
 # Identify cell markers
 
 cd45_markers <- FindAllMarkers(cd45_combined, only.pos = T, logfc.threshold = 0.1)
@@ -97,10 +101,23 @@ dev.off()
 
 # Test
 
+test2 <- cd45_combined
 
+test2$celltype <- Idents(test2)
 
+DefaultAssay(test2) <- "RNA"
 
+svglite(file = "./figures/IL17_1.svg", width = 12, height = 12)
+plots <- VlnPlot(test2, features = c("S100a9", "S100a8", "Fosb"), split.by = "group", group.by = "celltype", 
+                 pt.size = 0, combine = FALSE)
+CombinePlots(plots = plots, ncol = 1)
+dev.off()
 
+svglite(file = "./figures/IL17_2.svg", width = 12, height = 12)
+plots <- VlnPlot(test2, features = c("Il17a", "Il17ra"), split.by = "group", group.by = "celltype", 
+                 pt.size = 0, combine = FALSE)
+CombinePlots(plots = plots, ncol = 1)
+dev.off()
 
 
 
