@@ -1,10 +1,7 @@
 
-library(tidyverse)
-
-folder_names <- c("data", "refs", "R", "analysis", "figures", "man")
-map(folder_names, dir.create) #purrr-fect way
-
 # Load packages and refs for analysis
+
+library(tidyverse)
 
 library(Seurat)
 library(cowplot)
@@ -35,8 +32,8 @@ library(foreach)
 library(doParallel)
 library(svglite)
 
-mm_hs <- read_tsv("~/Documents/r_projects/HER2_scRNAseq/refs/mm_hs.txt", col_names = T)
-pathways.hallmark <- gmtPathways("~/Documents/r_projects/HER2_scRNAseq/refs/h.all.v6.2.symbols.gmt")
+mm_hs <- read_tsv("./refs/mm_hs.txt", col_names = T)
+pathways.hallmark <- gmtPathways("./refs/h.all.v6.2.symbols.gmt")
 
 # Helper functions
 
