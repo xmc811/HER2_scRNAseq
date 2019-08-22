@@ -1,0 +1,3 @@
+[submodule "SCI"]
+	path = SCI
+	url = https://github.com/xmc811/SCI.git
