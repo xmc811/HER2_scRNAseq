@@ -1,0 +1,3 @@
+[submodule "Scillus"]
+	path = Scillus
+	url = https://github.com/xmc811/Scillus.git
